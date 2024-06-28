@@ -1,10 +1,20 @@
 import { Hono } from "hono";
+import { PrismaClient } from "@prisma/client/edge";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
 // Create the main Hono app
-const app = new Hono();
+const app = new Hono<{
+  Bindings: {
+    DATABASE_URL: string;
+  };
+}>();
 
 app.post("/api/v1/signup", (c) => {
-  return c.text("signup route");
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+  console.log(prisma);
+  return c.text(`signup route${prisma}`);
 });
 
 app.post("/api/v1/signin", (c) => {
