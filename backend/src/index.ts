@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { sign } from "hono/jwt";
+import bcrypt from "bcryptjs";
 
 // Create the main Hono app
 const app = new Hono<{
@@ -18,12 +19,18 @@ app.post("/api/v1/signup", async (c) => {
 
   try {
     const body = await c.req.json();
+
+    //Hasing password
+    const salt = await bcrypt.genSalt(10);
+    const hasedPassword = await bcrypt.hash(body.password, salt);
+
     const user = await prisma.user.create({
       data: {
         email: body.email,
-        password: body.password,
+        password: hasedPassword,
       },
     });
+
     const jwt = await sign({ id: (await user).id }, c.env.JWT_SECRET);
 
     return c.json({ jwt });
