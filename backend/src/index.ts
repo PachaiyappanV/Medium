@@ -32,7 +32,7 @@ app.post("/api/v1/signup", async (c) => {
     });
 
     const jwt = await sign({ id: (await user).id }, c.env.JWT_SECRET);
-
+    c.status(201);
     return c.json({ jwt });
   } catch (err) {
     console.log(err);
@@ -41,8 +41,36 @@ app.post("/api/v1/signup", async (c) => {
   }
 });
 
-app.post("/api/v1/signin", (c) => {
-  return c.text("signin route");
+app.post("/api/v1/signin", async (c) => {
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+  try {
+    const body = await c.req.json();
+    const user = await prisma.user.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
+
+    if (!user) {
+      c.status(401);
+      return c.json({ error: "Invalid credentials" });
+    }
+    const isPasswordValid = await bcrypt.compare(body.password, user.password);
+
+    if (!isPasswordValid) {
+      c.status(401);
+      return c.json({ error: "Invalid credentials" });
+    }
+
+    const jwt = await sign({ id: user.id }, c.env.JWT_SECRET);
+    c.status(200);
+    return c.json({ jwt });
+  } catch (err) {
+    c.status(500);
+    return c.json({ error: "Internal server error" });
+  }
 });
 
 app.post("/api/v1/blog", (c) => {
