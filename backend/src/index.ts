@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { sign } from "hono/jwt";
 import bcrypt from "bcryptjs";
+import authenticateUser from "./middleware/authentication";
 
 // Create the main Hono app
 const app = new Hono<{
@@ -80,7 +81,7 @@ app.post("/api/v1/signin", async (c) => {
   }
 });
 
-app.post("/api/v1/blog", (c) => {
+app.post("/api/v1/blog", authenticateUser, async (c) => {
   return c.text("create blog route");
 });
 
