@@ -10,13 +10,22 @@ const app = new Hono<{
     DATABASE_URL: string;
     JWT_SECRET: string;
   };
+  Variables: {
+    prisma: any;
+    userId: string;
+  };
 }>();
 
-app.post("/api/v1/signup", async (c) => {
+app.use("*", async (c, next) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
+  c.set("prisma", prisma);
+  await next();
+});
 
+app.post("/api/v1/signup", async (c) => {
+  const prisma = c.get("prisma");
   try {
     const body = await c.req.json();
 
@@ -42,9 +51,7 @@ app.post("/api/v1/signup", async (c) => {
 });
 
 app.post("/api/v1/signin", async (c) => {
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = c.get("prisma");
   try {
     const body = await c.req.json();
     const user = await prisma.user.findUnique({
