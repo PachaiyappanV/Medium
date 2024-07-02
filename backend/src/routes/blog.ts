@@ -57,6 +57,29 @@ blogRouter.get("/:id", async (c) => {
   }
 });
 
-blogRouter.put("/api/v1/blog/:id", (c) => {
-  return c.text("update blog route");
+blogRouter.put("/:id", authenticateUser, async (c) => {
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+  const blogId = c.req.param("id");
+  const userId = c.get("userId");
+  try {
+    const { title, content } = await c.req.json();
+    const blog = await prisma.blog.update({
+      where: {
+        id: blogId,
+        authorId: userId,
+      },
+      data: {
+        title: title,
+        content: content,
+      },
+    });
+
+    c.status(200);
+    return c.json({ blog });
+  } catch (err) {
+    c.status(500);
+    return c.json({ error: "Internal server error" });
+  }
 });
