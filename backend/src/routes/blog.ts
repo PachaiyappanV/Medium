@@ -38,8 +38,23 @@ blogRouter.post("/", authenticateUser, async (c) => {
   }
 });
 
-blogRouter.get("/api/v1/blog/:id", (c) => {
-  return c.text("get single blog route");
+blogRouter.get("/:id", async (c) => {
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+  const id = c.req.param("id");
+  try {
+    const blog = await prisma.blog.findUnique({
+      where: {
+        id,
+      },
+    });
+    c.status(200);
+    return c.json({ blog });
+  } catch (err) {
+    c.status(500);
+    return c.json({ error: "Internal server error" });
+  }
 });
 
 blogRouter.put("/api/v1/blog/:id", (c) => {
