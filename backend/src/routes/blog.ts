@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import authenticateUser from "../middleware/authentication";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
+import { createPostInput } from "@pachaiyappan/common-app";
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -21,6 +22,11 @@ blogRouter.post("/", authenticateUser, async (c) => {
 
   try {
     const body = await c.req.json();
+    const { success } = createPostInput.safeParse(body);
+    if (!success) {
+      c.status(400);
+      return c.json({ error: "invalid input" });
+    }
     const blog = await prisma.blog.create({
       data: {
         authorId: userId,
