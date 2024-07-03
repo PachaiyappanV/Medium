@@ -3,7 +3,8 @@ import { sign } from "hono/jwt";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
-
+import { signupInput } from "@pachaiyappan/common-app";
+signupInput;
 export const userRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -17,6 +18,11 @@ userRouter.post("/signup", async (c) => {
   }).$extends(withAccelerate());
   try {
     const body = await c.req.json();
+    const { success } = signupInput.safeParse(body);
+    if (!success) {
+      c.status(400);
+      return c.json({ error: "Invalid input" });
+    }
 
     //Hasing password
     const salt = await bcrypt.genSalt(10);
